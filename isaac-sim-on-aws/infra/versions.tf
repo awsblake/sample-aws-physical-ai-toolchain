@@ -11,4 +11,12 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+
+  # Opt out of the account's untagged-resource cleanup, which deletes
+  # resources older than 7 days that lack this tag.
+  default_tags {
+    tags = {
+      "auto-delete" = "no"
+    }
+  }
 }
