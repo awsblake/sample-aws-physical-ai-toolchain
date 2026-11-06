@@ -74,8 +74,9 @@ resource "aws_security_group" "sim" {
 
 # IAM role: SSM core + ECR read-only + S3 read on checkpoints and models
 resource "aws_iam_role" "sim" {
-  count = var.enable_sim ? 1 : 0
-  name  = "${local.prefix}-mujoco-sim-role"
+  count                = var.enable_sim ? 1 : 0
+  name                 = "${local.prefix}-mujoco-sim-role"
+  permissions_boundary = var.permissions_boundary_arn
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

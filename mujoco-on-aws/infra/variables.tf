@@ -15,3 +15,9 @@ variable "project_name" {
   type        = string
   default     = "physical-ai"
 }
+
+variable "permissions_boundary_arn" {
+  description = "ARN of the IAM policy set as permissions boundary on every role this stack creates (null for none)"
+  type        = string
+  default     = null
+}

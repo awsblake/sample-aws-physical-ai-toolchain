@@ -96,7 +96,8 @@ resource "aws_s3_bucket_public_access_block" "checkpoints" {
 # =============================================================================
 
 resource "aws_iam_role" "sagemaker" {
-  name = "${local.prefix}-sagemaker-role"
+  name                 = "${local.prefix}-sagemaker-role"
+  permissions_boundary = var.permissions_boundary_arn
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -168,7 +169,8 @@ resource "aws_iam_role_policy" "sagemaker_ecr" {
 # =============================================================================
 
 resource "aws_iam_role" "cosmos" {
-  name = "${local.prefix}-cosmos-role"
+  name                 = "${local.prefix}-cosmos-role"
+  permissions_boundary = var.permissions_boundary_arn
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

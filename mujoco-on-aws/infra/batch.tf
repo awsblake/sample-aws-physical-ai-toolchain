@@ -85,8 +85,9 @@ resource "aws_security_group" "batch" {
 
 # IAM role for Batch compute instances (ECS agent, image pull, logs)
 resource "aws_iam_role" "batch_instance" {
-  count = var.enable_batch ? 1 : 0
-  name  = "${local.prefix}-mujoco-batch-instance-role"
+  count                = var.enable_batch ? 1 : 0
+  name                 = "${local.prefix}-mujoco-batch-instance-role"
+  permissions_boundary = var.permissions_boundary_arn
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -112,8 +113,9 @@ resource "aws_iam_instance_profile" "batch" {
 
 # IAM role for the training container: S3 on the two foundation buckets only
 resource "aws_iam_role" "batch_job" {
-  count = var.enable_batch ? 1 : 0
-  name  = "${local.prefix}-mujoco-batch-job-role"
+  count                = var.enable_batch ? 1 : 0
+  name                 = "${local.prefix}-mujoco-batch-job-role"
+  permissions_boundary = var.permissions_boundary_arn
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -153,34 +155,15 @@ resource "aws_iam_role_policy" "batch_job_s3" {
   })
 }
 
-# Batch service role
-resource "aws_iam_role" "batch_service" {
-  count = var.enable_batch ? 1 : 0
-  name  = "${local.prefix}-mujoco-batch-service-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "batch.amazonaws.com" }
-      Action    = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "batch_service" {
-  count      = var.enable_batch ? 1 : 0
-  role       = aws_iam_role.batch_service[0].name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
-}
-
 # Compute environment: scales to zero when no job is queued
 resource "aws_batch_compute_environment" "mujoco" {
   count = var.enable_batch ? 1 : 0
   name  = "${local.prefix}-mujoco-compute"
   type  = "MANAGED"
 
-  service_role = aws_iam_role.batch_service[0].arn
+  # Service-linked role, set explicitly: service_role is computed, so omitting it would leave
+  # an existing environment on a removed custom role
+  service_role = "arn:aws:iam::${local.account_id}:role/aws-service-role/batch.amazonaws.com/AWSServiceRoleForBatch"
 
   compute_resources {
     type               = "EC2"
@@ -210,8 +193,6 @@ resource "aws_batch_compute_environment" "mujoco" {
     Environment = var.environment
     Component   = "mujoco"
   }
-
-  depends_on = [aws_iam_role_policy_attachment.batch_service]
 }
 
 # Job queue
