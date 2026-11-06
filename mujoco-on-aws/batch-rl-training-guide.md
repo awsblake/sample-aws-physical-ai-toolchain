@@ -50,18 +50,22 @@ terraform -chdir=foundation/infra init
 terraform -chdir=foundation/infra apply -var="aws_region=us-east-2"
 ```
 
+If your deploy role may only create roles that carry a permissions boundary, add `-var="permissions_boundary_arn=arn:aws:iam::<ACCOUNT_ID>:policy/physical-ai-mujoco-boundary"` to every `apply`: an apply without it removes the boundary from the roles.
+
 See the [foundation README](../foundation/README.md) for what it creates.
 
 ---
 
 ## Step 2: Deploy MuJoCo Batch Infrastructure
 
+Batch runs under its service-linked role `AWSServiceRoleForBatch`. Before the first apply, if `aws iam get-role --role-name AWSServiceRoleForBatch` fails, create the role once with `aws iam create-service-linked-role --aws-service-name batch.amazonaws.com`.
+
 ```bash
 terraform -chdir=mujoco-on-aws/infra init
 terraform -chdir=mujoco-on-aws/infra apply -var="aws_region=us-east-2" -var="enable_batch=true"
 ```
 
-Add `-var="enable_sim=true"` if the [headless instance](headless-sim-guide.md) is deployed from the same root, or Terraform removes it.
+Add `-var="enable_sim=true"` if the [headless instance](headless-sim-guide.md) is deployed from the same root, or Terraform removes it. If your deploy role may only create roles that carry a permissions boundary, add `-var="permissions_boundary_arn=arn:aws:iam::<ACCOUNT_ID>:policy/physical-ai-mujoco-boundary"` to every `apply`: an apply without it removes the boundary from the roles.
 
 **What this creates:**
 
@@ -72,7 +76,7 @@ Add `-var="enable_sim=true"` if the [headless instance](headless-sim-guide.md) i
 | Batch job queue: `physical-ai-dev-mujoco-queue` | Job scheduling |
 | Batch job definition: `physical-ai-dev-mujoco-train` | Single node, 1 GPU, runs `batch-train`, sets `CHECKPOINT_BUCKET` |
 | Security group | Egress only (single-node jobs need no inbound traffic) |
-| IAM roles | Instance role (ECS agent, image pull, logs); job role with S3 read/write on the checkpoints and models buckets only |
+| IAM roles | Instance role (ECS agent, image pull, logs); job role with S3 read/write on the checkpoints and models buckets only. Batch itself uses its service-linked role `AWSServiceRoleForBatch` |
 
 **Verify:**
 

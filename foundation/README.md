@@ -34,6 +34,8 @@ terraform plan -var="aws_region=us-east-2"
 terraform apply -var="aws_region=us-east-2"
 ```
 
+If your deploy role may only create roles that carry a permissions boundary, add `-var="permissions_boundary_arn=arn:aws:iam::<ACCOUNT_ID>:policy/physical-ai-mujoco-boundary"` to every `apply`: an apply without it removes the boundary from the roles.
+
 ### Variables
 
 | Variable | Default | Description |
@@ -41,6 +43,7 @@ terraform apply -var="aws_region=us-east-2"
 | `aws_region` | `us-east-1` | AWS region to deploy into |
 | `environment` | `dev` | Environment name (dev, staging, prod) |
 | `project_name` | `physical-ai` | Project name prefix for all resources |
+| `permissions_boundary_arn` | `null` | IAM policy ARN set as permissions boundary on every role this stack creates |
 
 ### Outputs
 

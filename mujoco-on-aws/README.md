@@ -53,7 +53,7 @@ terraform init
 terraform apply -var="aws_region=us-east-2" -var="enable_batch=true" -var="enable_sim=true"
 ```
 
-Set only the flag for the mode you want. The region must match the one foundation is deployed in.
+Set only the flag for the mode you want. The region must match the one foundation is deployed in. If your deploy role may only create roles that carry a permissions boundary, add `-var="permissions_boundary_arn=arn:aws:iam::<ACCOUNT_ID>:policy/physical-ai-mujoco-boundary"` to every `apply`: an apply without it removes the boundary from the roles.
 
 | Resource | Created when | Description |
 |----------|--------------|-------------|
@@ -62,7 +62,7 @@ Set only the flag for the mode you want. The region must match the one foundatio
 | Batch job queue + job definition | `enable_batch` | `physical-ai-dev-mujoco-queue`, `physical-ai-dev-mujoco-train` (1 GPU, `batch-train`) |
 | EC2 instance | `enable_sim` | g6e.xlarge on the Deep Learning Base GPU AMI, 100 GB encrypted gp3, IMDSv2 |
 | Security groups | Per mode | Egress only, no inbound rules |
-| IAM roles | Per mode | Batch job: read/write on the checkpoints and models buckets. Instance: SSM + ECR read-only + S3 read on those buckets |
+| IAM roles | Per mode | Batch uses its service-linked role `AWSServiceRoleForBatch` (if `aws iam get-role --role-name AWSServiceRoleForBatch` fails, create it once with `aws iam create-service-linked-role --aws-service-name batch.amazonaws.com` before the apply). Batch job: read/write on the checkpoints and models buckets. Instance: SSM + ECR read-only + S3 read on those buckets |
 
 MuJoCo creates no VPC, buckets or ECR repository of its own: it reads them from the [foundation](../foundation/README.md) SSM parameters. Terraform files: [`infra/main.tf`](infra/main.tf), [`infra/batch.tf`](infra/batch.tf), [`infra/ec2.tf`](infra/ec2.tf).
 

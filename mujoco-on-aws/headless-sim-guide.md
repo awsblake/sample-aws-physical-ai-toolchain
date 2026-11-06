@@ -38,7 +38,7 @@ terraform -chdir=mujoco-on-aws/infra init
 terraform -chdir=mujoco-on-aws/infra apply -var="aws_region=us-east-2" -var="enable_sim=true"
 ```
 
-Add `-var="enable_batch=true"` if Batch is deployed from the same root, or Terraform removes it.
+Add `-var="enable_batch=true"` if Batch is deployed from the same root, or Terraform removes it. If your deploy role may only create roles that carry a permissions boundary, add `-var="permissions_boundary_arn=arn:aws:iam::<ACCOUNT_ID>:policy/physical-ai-mujoco-boundary"` to every `apply`: an apply without it removes the boundary from the roles.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -46,6 +46,7 @@ Add `-var="enable_batch=true"` if Batch is deployed from the same root, or Terra
 | `sim_instance_type` | `g6e.xlarge` | GPU instance type; must be offered in the first foundation private subnet's AZ |
 | `sim_volume_size` | `100` | Root volume in GB (encrypted gp3) |
 | `sim_ami_ssm_parameter` | Deep Learning Base GPU AMI (Amazon Linux 2023) | Public SSM parameter for the AMI |
+| `permissions_boundary_arn` | `null` | IAM policy ARN set as permissions boundary on every role this root creates |
 
 ---
 
