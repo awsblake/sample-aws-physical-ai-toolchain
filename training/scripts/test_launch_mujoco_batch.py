@@ -4,6 +4,8 @@ Dry-run checks for the MuJoCo Batch launcher.
 Runs launch_mujoco_batch.py --dry-run as a user would and checks the SubmitJob
 payload it prints. Makes no AWS calls and needs no boto3:
   pytest training/scripts/test_launch_mujoco_batch.py
+or, with no pytest installed (the fast lane):
+  python3 training/scripts/test_launch_mujoco_batch.py
 """
 
 import json
@@ -83,3 +85,10 @@ def test_dry_run_reads_queue_and_job_definition_from_env():
 
     assert payload["jobQueue"] == "env-queue"
     assert payload["jobDefinition"] == "env-jobdef"
+
+
+if __name__ == "__main__":
+    tests = [f for name, f in sorted(globals().items()) if name.startswith("test_")]
+    for test in tests:
+        test()
+    print(f"{len(tests)} passed")
