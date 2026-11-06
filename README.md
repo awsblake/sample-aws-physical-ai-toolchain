@@ -41,6 +41,7 @@ The flywheel consists of four pillars with an **Agentic AI Orchestration Layer**
 | [**Isaac Lab**](isaac-lab-on-aws/) | [NVIDIA Isaac Lab](https://developer.nvidia.com/isaac/lab) RL training (4096 parallel envs) on SageMaker + Batch | `isaac-lab-on-aws/infra/` | [README](isaac-lab-on-aws/) | Available |
 | [**Isaac GR00T**](isaac-gr00t-on-aws/) | Fine-tune [NVIDIA GR00T](https://developer.nvidia.com/isaac/gr00t) N1.6 VLA model on SageMaker + Batch | `isaac-gr00t-on-aws/infra/` | [README](isaac-gr00t-on-aws/) | Available |
 | [**Isaac Sim**](isaac-sim-on-aws/) | [NVIDIA Isaac Sim](https://docs.isaacsim.omniverse.nvidia.com/latest/index.html) GPU workstation for physics simulation | `isaac-sim-on-aws/infra/` | [README](isaac-sim-on-aws/) | Available |
+| [**MuJoCo**](mujoco-on-aws/) | [MuJoCo](https://mujoco.org/) MJX RL training (Brax PPO, thousands of parallel envs on one GPU) on Batch + a headless sim instance, no NGC key | `mujoco-on-aws/infra/` | [README](mujoco-on-aws/) | Preview |
 | [**OSMO**](osmo-on-aws/) | [NVIDIA OSMO](https://nvidia.github.io/OSMO/main/user_guide/index.html) 6.3 orchestration on EKS - control plane, compute, GPU scheduling | `osmo-on-aws/001-iac/` | [README](osmo-on-aws/) | Available |
 | *Edge Deployment* | Model packaging to [Jetson](https://developer.nvidia.com/embedded-computing) via EKS Hybrid Nodes + Greengrass | Planned | - | Planned |
 | *Agentic Orchestration* | AI orchestration with Strands Agents SDK + Amazon Bedrock AgentCore | Planned | - | Planned |
@@ -114,6 +115,7 @@ The example uses a **UR3 arm** (a popular collaborative robot in the industry) w
 | Cosmos Transfer 2.5 | ~$8/hr | g6e.12xlarge (Spot) |
 | Isaac Sim workstation | ~$3.00/hr | g6e.4xlarge (stop when idle) |
 | Isaac Lab RL training | ~$10-30 | ml.g5.xlarge for 2-4 hrs |
+| MuJoCo (Preview) | ~$1.86-3/hr | g6e.xlarge headless instance (stop when idle) or g6e.4xlarge per Batch job (scales to zero) |
 | OSMO (full deployment) | ~$5/hr | EKS + RDS + ElastiCache |
 
 All resources tear down with `terraform destroy` or `aws cloudformation delete-stack`.
