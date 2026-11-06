@@ -147,10 +147,15 @@ resource "aws_instance" "sim" {
     volume_size = var.sim_volume_size
     volume_type = "gp3"
     encrypted   = true
+  }
 
-    tags = {
-      "auto-delete" = "no"
-    }
+  # volume_tags tags the root volume in the RunInstances request itself, so
+  # the restricted deploy role (which only mutates resources tagged Project)
+  # never has to tag an untagged volume afterwards.
+  volume_tags = {
+    Project       = var.project_name
+    Environment   = var.environment
+    "auto-delete" = "no"
   }
 
   metadata_options {
