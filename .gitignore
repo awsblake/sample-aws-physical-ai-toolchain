@@ -78,3 +78,10 @@ notebooks/lab4/.env
 
 # Notebook checkpoints (can contain secrets from cell execution)
 .ipynb_checkpoints/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
+*.gate.lock*
