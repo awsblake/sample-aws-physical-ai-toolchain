@@ -72,7 +72,7 @@
 # - github.token    → use GITHUB_TOKEN env var instead
 
 sync:
-    remote: "git+https://github.com/abaw/sample-aws-physical-ai-toolchain.git"
+    remote: "git+https://github.com/awsblake/sample-aws-physical-ai-toolchain.git"
 
 events-journal: true
 
