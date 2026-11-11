@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "sampleawsphysicalaitoolchain",
+  "project_id": "7661f65a-05a7-4b77-b7ca-28dc0496f9d3"
+}
