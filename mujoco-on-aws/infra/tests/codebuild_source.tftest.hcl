@@ -18,6 +18,13 @@ mock_provider "aws" {
   }
 }
 
+override_data {
+  target = data.aws_ssm_parameter.mujoco_ecr
+  values = {
+    value = "000000000000.dkr.ecr.us-east-1.amazonaws.com/physical-ai/mujoco"
+  }
+}
+
 run "codebuild_source_holds_mujoco_build_context" {
   command = plan
 
@@ -27,8 +34,18 @@ run "codebuild_source_holds_mujoco_build_context" {
   }
 
   assert {
-    condition     = aws_codebuild_project.mujoco.source[0].location == "${aws_s3_object.mujoco_source.bucket}/${aws_s3_object.mujoco_source.key}"
-    error_message = "MuJoCo CodeBuild source must point at the uploaded repo archive"
+    condition     = aws_codebuild_project.mujoco.source[0].location == "physical-ai-dev-datasets-000000000000/codebuild-source/mujoco-source.zip"
+    error_message = "MuJoCo CodeBuild source must point at the repo archive in the datasets bucket"
+  }
+
+  assert {
+    condition     = aws_s3_object.mujoco_source.source == data.archive_file.mujoco_source.output_path && data.archive_file.mujoco_source.output_size > 0
+    error_message = "The uploaded object must be the non-empty repo archive"
+  }
+
+  assert {
+    condition     = alltrue([for e in ["**/.env", "**/*.tfstate", "**/.terraform", ".git"] : contains(data.archive_file.mujoco_source.excludes, e)])
+    error_message = "The source archive must exclude secrets and Terraform state at any depth"
   }
 
   assert {

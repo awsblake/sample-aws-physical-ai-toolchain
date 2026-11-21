@@ -20,33 +20,40 @@ data "aws_ssm_parameter" "datasets_bucket" {
 # =============================================================================
 # The buildspec runs `docker build -f containers/mujoco/Dockerfile .` and
 # ./containers/mujoco/test-image.sh from the repo root, so CodeBuild needs the
-# checkout. Mirrors the CDK ContainerBuild.sourceAsset excludes, plus Terraform
-# state and vars, which must never leave the machine.
+# checkout. Covers the CDK ContainerBuild.sourceAsset excludes plus gitignored
+# secrets, Terraform state and vars, which must never leave the machine.
 
 data "archive_file" "mujoco_source" {
   type        = "zip"
   source_dir  = "${path.module}/../.."
   output_path = "${path.module}/.terraform/mujoco-source.zip"
   excludes = [
+    # Unlike CDK's, these match from the repo root unless prefixed with **/
     ".git",
     ".claude",
     ".beads",
-    "node_modules",
-    "cdk/node_modules",
-    "cdk/cdk.out",
-    "cdk/cdk.out2",
+    ".kiro",
+    ".vscode",
+    "plans",
+    "CLAUDE.md",
+    "**/node_modules",
+    "cdk/cdk.out*",
+    "cdk/cdk.context.json",
     "cdk/*.js",
     "cdk/*.d.ts",
     "**/__pycache__",
     "**/*.pyc",
-    ".venv",
-    "venv",
-    ".DS_Store",
-    ".env",
+    "**/.venv",
+    "**/venv",
+    "**/.DS_Store",
+    "**/.env",
+    "**/*.env.local",
+    "**/osmo_values.yaml",
     "**/.terraform",
     "**/*.tfstate",
     "**/*.tfstate.*",
     "**/*.tfvars",
+    "data/**",
     "training/data/**",
   ]
 }
