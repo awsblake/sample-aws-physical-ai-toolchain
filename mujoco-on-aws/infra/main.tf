@@ -149,8 +149,8 @@ resource "aws_iam_role_policy" "codebuild" {
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::${var.project_name}-${var.environment}-datasets-${local.account_id}",
-          "arn:aws:s3:::${var.project_name}-${var.environment}-datasets-${local.account_id}/*"
+          "arn:aws:s3:::${data.aws_ssm_parameter.datasets_bucket.value}",
+          "arn:aws:s3:::${data.aws_ssm_parameter.datasets_bucket.value}/*"
         ]
       },
       {
