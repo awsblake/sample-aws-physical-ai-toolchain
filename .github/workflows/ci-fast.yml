@@ -1,0 +1,41 @@
+# Fast lane on GitHub-hosted runners: this repo has no self-hosted runners, so the ci-contract
+# templates (runs-on [self-hosted, ci-host]) would queue forever (sampleawsphysicalaitoolchain-4vr).
+# The `ci.lanes.fast` step runs .claude/quinn.yaml's ci.lanes.fast.command verbatim: keep the two
+# in step. The secret scan is a plain grep (scripts/secret-scan-staged.sh) over the files the PR
+# changes, so it runs hosted too; no scanner binary runs here either.
+name: ci-fast
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+# A new push cancels the PR's stale run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: npm ci (cdk)
+        run: npm ci --no-audit --no-fund
+        working-directory: cdk
+      - name: ci.lanes.fast
+        run: python3 -m compileall -q pai && cdk/node_modules/.bin/tsc -p cdk --noEmit && python3 training/scripts/test_launch_mujoco_batch.py && python3 scripts/test_secret_scan_hook.py
+
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: secret scan
+        run: |
+          git fetch --no-tags --quiet origin "$GITHUB_BASE_REF"
+          sh scripts/secret-scan-staged.sh "origin/$GITHUB_BASE_REF"
