@@ -176,6 +176,24 @@ resource "aws_launch_template" "batch" {
     }
   }
 
+  # Provider default_tags don't reach instances and volumes Batch launches;
+  # without these SpringClean deletes the min_vcpus GPU hosts after 7 days.
+  # Batch re-reads "$Latest" only on a compute environment infrastructure
+  # update, so hosts already running must be retagged by hand.
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      "auto-delete" = "no"
+    }
+  }
+
+  tag_specifications {
+    resource_type = "volume"
+    tags = {
+      "auto-delete" = "no"
+    }
+  }
+
   tags = {
     Name        = "${local.prefix}-batch-rl-lt"
     Project     = var.project_name
