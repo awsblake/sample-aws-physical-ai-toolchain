@@ -49,8 +49,11 @@ enableWaf: false
 enableWafv2: true   # Enable WAFv2 support
 enableShield: false # Enable for DDoS protection (requires Shield Advanced)
 
-# Default tags for AWS resources
-defaultTags: {}
+# Default tags for AWS resources the controller creates (ALBs, target groups,
+# security groups); Terraform default_tags cannot reach them. auto-delete=no
+# exempts them from SpringClean, which deletes untagged resources after 7 days.
+defaultTags:
+  auto-delete: "no"
 
 # Ingress class
 ingressClass: alb
