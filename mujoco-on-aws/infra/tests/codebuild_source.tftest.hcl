@@ -3,6 +3,8 @@
 # `docker build -f containers/mujoco/Dockerfile .` and ./containers/mujoco/test-image.sh.
 # Runs offline (mocked AWS) from mujoco-on-aws/infra:
 #   terraform init -backend=false && terraform test
+# check_source_archive.py runs this, then checks the zip it built holds the
+# build context and none of the excluded secrets or state.
 
 mock_provider "aws" {
   mock_data "aws_caller_identity" {
@@ -28,6 +30,12 @@ override_data {
 run "codebuild_source_holds_mujoco_build_context" {
   command = plan
 
+  # Differs from the bucket's environment in the SSM value, so an ARN rebuilt
+  # from var.environment fails the IAM assert below.
+  variables {
+    environment = "staging"
+  }
+
   assert {
     condition     = aws_codebuild_project.mujoco.source[0].type == "S3"
     error_message = "MuJoCo CodeBuild source must be the S3 repo archive, not NO_SOURCE (an empty build dir)"
@@ -36,6 +44,14 @@ run "codebuild_source_holds_mujoco_build_context" {
   assert {
     condition     = aws_codebuild_project.mujoco.source[0].location == "physical-ai-dev-datasets-000000000000/codebuild-source/mujoco-source.zip"
     error_message = "MuJoCo CodeBuild source must point at the repo archive in the datasets bucket"
+  }
+
+  assert {
+    condition = jsondecode(aws_iam_role_policy.codebuild.policy).Statement[0].Resource == [
+      "arn:aws:s3:::physical-ai-dev-datasets-000000000000",
+      "arn:aws:s3:::physical-ai-dev-datasets-000000000000/*",
+    ]
+    error_message = "The CodeBuild role must read the bucket the archive is uploaded to (the datasets-bucket SSM value), not one rebuilt from var.environment"
   }
 
   assert {
