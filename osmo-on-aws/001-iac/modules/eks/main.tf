@@ -160,6 +160,15 @@ module "eks" {
     aws-ebs-csi-driver = {
       addon_version            = "v1.62.0-eksbuild.1"
       service_account_role_arn = module.ebs_csi_irsa.iam_role_arn
+      # PV volumes are created by the driver at runtime, outside provider
+      # default_tags; auto-delete=no exempts them from SpringClean.
+      configuration_values = jsonencode({
+        controller = {
+          extraVolumeTags = {
+            "auto-delete" = "no"
+          }
+        }
+      })
     }
   }
 
