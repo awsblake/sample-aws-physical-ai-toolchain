@@ -59,6 +59,18 @@ data "archive_file" "isaac_lab_source" {
     "**/*.tfvars",
     "data/**",
     "training/data/**",
+    "**/.ipynb_checkpoints",
+    "**/.idea",
+    "**/.dolt",
+    "**/*.db",
+    "**/*.gate.lock*",
+    "**/*.egg-info",
+    "**/.eggs",
+    "**/build",
+    "**/dist",
+    "PLAN.md",
+    "TODO.md",
+    "docs/ROADMAP.md",
   ]
 }
 
@@ -91,6 +103,12 @@ resource "aws_codebuild_project" "isaac_lab" {
     environment_variable {
       name  = "ECR_REPO_URI"
       value = data.aws_ssm_parameter.isaac_lab_ecr.value
+    }
+
+    # The buildspec logs in to nvcr.io with this secret (CDK sets it the same way).
+    environment_variable {
+      name  = "NGC_SECRET_NAME"
+      value = var.ngc_secret_arn != "" ? var.ngc_secret_arn : "${var.project_name}/ngc-api-key"
     }
 
     environment_variable {

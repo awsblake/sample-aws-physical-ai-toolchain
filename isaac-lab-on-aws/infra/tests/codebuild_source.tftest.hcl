@@ -52,7 +52,12 @@ run "codebuild_source_holds_isaac_lab_build_context" {
   }
 
   assert {
-    condition     = alltrue([for e in ["**/.env", "**/*.tfstate", "**/.terraform", ".git"] : contains(data.archive_file.isaac_lab_source.excludes, e)])
+    condition     = contains([for v in aws_codebuild_project.isaac_lab.environment[0].environment_variable : "${v.name}=${v.value}"], "NGC_SECRET_NAME=physical-ai/ngc-api-key")
+    error_message = "The buildspec reads the NGC key from $NGC_SECRET_NAME, so the project must set it (default physical-ai/ngc-api-key)"
+  }
+
+  assert {
+    condition     = alltrue([for e in ["**/.env", "**/*.tfstate", "**/.terraform", ".git", "**/.ipynb_checkpoints", "PLAN.md", "docs/ROADMAP.md"] : contains(data.archive_file.isaac_lab_source.excludes, e)])
     error_message = "The source archive must exclude secrets and Terraform state at any depth"
   }
 

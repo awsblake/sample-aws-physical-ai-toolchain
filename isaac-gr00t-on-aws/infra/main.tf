@@ -63,6 +63,18 @@ data "archive_file" "gr00t_source" {
     "**/*.tfvars",
     "data/**",
     "training/data/**",
+    "**/.ipynb_checkpoints",
+    "**/.idea",
+    "**/.dolt",
+    "**/*.db",
+    "**/*.gate.lock*",
+    "**/*.egg-info",
+    "**/.eggs",
+    "**/build",
+    "**/dist",
+    "PLAN.md",
+    "TODO.md",
+    "docs/ROADMAP.md",
   ]
 }
 

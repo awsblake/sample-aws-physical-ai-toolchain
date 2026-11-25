@@ -40,7 +40,7 @@ run "codebuild_source_holds_gr00t_build_context" {
   }
 
   assert {
-    condition     = alltrue([for e in ["**/.env", "**/*.tfstate", "**/.terraform", ".git"] : contains(data.archive_file.gr00t_source.excludes, e)])
+    condition     = alltrue([for e in ["**/.env", "**/*.tfstate", "**/.terraform", ".git", "**/.ipynb_checkpoints", "PLAN.md", "docs/ROADMAP.md"] : contains(data.archive_file.gr00t_source.excludes, e)])
     error_message = "The source archive must exclude secrets and Terraform state at any depth"
   }
 
