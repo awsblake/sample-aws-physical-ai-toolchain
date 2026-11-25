@@ -24,6 +24,68 @@ data "aws_ssm_parameter" "groot_inference_ecr" {
 }
 
 # =============================================================================
+# CODEBUILD SOURCE: REPO ARCHIVE
+# =============================================================================
+# The buildspecs run `docker build ... containers/gr00t-training/` and
+# `cd containers/gr00t-inference` from the repo root, so CodeBuild needs the
+# checkout. Covers the CDK ContainerBuild.sourceAsset excludes plus gitignored
+# secrets, Terraform state and vars, which must never leave the machine.
+
+data "archive_file" "gr00t_source" {
+  type        = "zip"
+  source_dir  = "${path.module}/../.."
+  output_path = "${path.module}/.terraform/gr00t-source.zip"
+  excludes = [
+    # Unlike CDK's, these match from the repo root unless prefixed with **/
+    ".git",
+    ".claude",
+    ".beads",
+    ".kiro",
+    ".vscode",
+    "plans",
+    "CLAUDE.md",
+    "**/node_modules",
+    "cdk/cdk.out*",
+    "cdk/cdk.context.json",
+    "cdk/*.js",
+    "cdk/*.d.ts",
+    "**/__pycache__",
+    "**/*.pyc",
+    "**/.venv",
+    "**/venv",
+    "**/.DS_Store",
+    "**/.env",
+    "**/*.env.local",
+    "**/osmo_values.yaml",
+    "**/.terraform",
+    "**/*.tfstate",
+    "**/*.tfstate.*",
+    "**/*.tfvars",
+    "data/**",
+    "training/data/**",
+    "**/.ipynb_checkpoints",
+    "**/.idea",
+    "**/.dolt",
+    "**/*.db",
+    "**/*.gate.lock*",
+    "**/*.egg-info",
+    "**/.eggs",
+    "**/build",
+    "**/dist",
+    "PLAN.md",
+    "TODO.md",
+    "docs/ROADMAP.md",
+  ]
+}
+
+resource "aws_s3_object" "gr00t_source" {
+  bucket = data.aws_ssm_parameter.datasets_bucket.value
+  key    = "codebuild-source/gr00t-source.zip"
+  source = data.archive_file.gr00t_source.output_path
+  etag   = data.archive_file.gr00t_source.output_md5
+}
+
+# =============================================================================
 # CODEBUILD: GROOT TRAINING CONTAINER
 # =============================================================================
 
@@ -59,7 +121,8 @@ resource "aws_codebuild_project" "groot_training" {
   }
 
   source {
-    type      = "NO_SOURCE"
+    type      = "S3"
+    location  = "${aws_s3_object.gr00t_source.bucket}/${aws_s3_object.gr00t_source.key}"
     buildspec = file("${path.module}/../../containers/gr00t-training/buildspec.yml")
   }
 
@@ -108,7 +171,8 @@ resource "aws_codebuild_project" "groot_inference" {
   }
 
   source {
-    type      = "NO_SOURCE"
+    type      = "S3"
+    location  = "${aws_s3_object.gr00t_source.bucket}/${aws_s3_object.gr00t_source.key}"
     buildspec = file("${path.module}/../../containers/gr00t-inference/buildspec.yml")
   }
 
