@@ -47,11 +47,17 @@ run "codebuild_source_holds_mujoco_build_context" {
   }
 
   assert {
-    condition = jsondecode(aws_iam_role_policy.codebuild.policy).Statement[0].Resource == [
+    condition = one([for st in jsondecode(aws_iam_role_policy.codebuild.policy).Statement : st.Resource if try(st.Sid, "") == "ReadDatasetsBucket"]) == [
       "arn:aws:s3:::physical-ai-dev-datasets-000000000000",
       "arn:aws:s3:::physical-ai-dev-datasets-000000000000/*",
     ]
     error_message = "The CodeBuild role must read the bucket the archive is uploaded to (the datasets-bucket SSM value), not one rebuilt from var.environment"
+  }
+
+  # issensitive() needs terraform >= 1.8; CI pins 1.17.2.
+  assert {
+    condition     = !issensitive(aws_iam_role_policy.codebuild.policy)
+    error_message = "The CodeBuild IAM policy must not be sensitive, or terraform plan hides it as (sensitive value)"
   }
 
   assert {
