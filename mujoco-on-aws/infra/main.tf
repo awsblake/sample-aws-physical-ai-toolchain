@@ -15,6 +15,12 @@ data "aws_ssm_parameter" "datasets_bucket" {
   name = "/${var.project_name}/datasets-bucket"
 }
 
+locals {
+  # SSM values are sensitive; a bucket name is not, and leaving it marked hides
+  # the whole CodeBuild IAM policy in plan output as (sensitive value).
+  datasets_bucket = nonsensitive(data.aws_ssm_parameter.datasets_bucket.value)
+}
+
 # =============================================================================
 # CODEBUILD SOURCE: REPO ARCHIVE
 # =============================================================================
@@ -59,7 +65,7 @@ data "archive_file" "mujoco_source" {
 }
 
 resource "aws_s3_object" "mujoco_source" {
-  bucket = data.aws_ssm_parameter.datasets_bucket.value
+  bucket = local.datasets_bucket
   key    = "codebuild-source/mujoco-source.zip"
   source = data.archive_file.mujoco_source.output_path
   etag   = data.archive_file.mujoco_source.output_md5
@@ -141,6 +147,7 @@ resource "aws_iam_role_policy" "codebuild" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid    = "ReadDatasetsBucket"
         Effect = "Allow"
         Action = [
           "s3:GetObject",
@@ -149,8 +156,8 @@ resource "aws_iam_role_policy" "codebuild" {
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::${data.aws_ssm_parameter.datasets_bucket.value}",
-          "arn:aws:s3:::${data.aws_ssm_parameter.datasets_bucket.value}/*"
+          "arn:aws:s3:::${local.datasets_bucket}",
+          "arn:aws:s3:::${local.datasets_bucket}/*"
         ]
       },
       {
