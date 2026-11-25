@@ -15,6 +15,60 @@ data "aws_ssm_parameter" "isaac_lab_ecr" {
   name = "/${var.project_name}/ecr/isaac-lab"
 }
 
+data "aws_ssm_parameter" "datasets_bucket" {
+  name = "/${var.project_name}/datasets-bucket"
+}
+
+# =============================================================================
+# CODEBUILD SOURCE: REPO ARCHIVE
+# =============================================================================
+# The buildspec runs `docker build -f containers/isaac-lab/Dockerfile .` from the
+# repo root (the Dockerfile COPYs training/ and workflows/), so CodeBuild needs the
+# checkout. Covers the CDK ContainerBuild.sourceAsset excludes plus gitignored
+# secrets, Terraform state and vars, which must never leave the machine.
+
+data "archive_file" "isaac_lab_source" {
+  type        = "zip"
+  source_dir  = "${path.module}/../.."
+  output_path = "${path.module}/.terraform/isaac-lab-source.zip"
+  excludes = [
+    # Unlike CDK's, these match from the repo root unless prefixed with **/
+    ".git",
+    ".claude",
+    ".beads",
+    ".kiro",
+    ".vscode",
+    "plans",
+    "CLAUDE.md",
+    "**/node_modules",
+    "cdk/cdk.out*",
+    "cdk/cdk.context.json",
+    "cdk/*.js",
+    "cdk/*.d.ts",
+    "**/__pycache__",
+    "**/*.pyc",
+    "**/.venv",
+    "**/venv",
+    "**/.DS_Store",
+    "**/.env",
+    "**/*.env.local",
+    "**/osmo_values.yaml",
+    "**/.terraform",
+    "**/*.tfstate",
+    "**/*.tfstate.*",
+    "**/*.tfvars",
+    "data/**",
+    "training/data/**",
+  ]
+}
+
+resource "aws_s3_object" "isaac_lab_source" {
+  bucket = data.aws_ssm_parameter.datasets_bucket.value
+  key    = "codebuild-source/isaac-lab-source.zip"
+  source = data.archive_file.isaac_lab_source.output_path
+  etag   = data.archive_file.isaac_lab_source.output_md5
+}
+
 # =============================================================================
 # CODEBUILD: ISAAC LAB CONTAINER
 # =============================================================================
@@ -51,7 +105,8 @@ resource "aws_codebuild_project" "isaac_lab" {
   }
 
   source {
-    type      = "NO_SOURCE"
+    type      = "S3"
+    location  = "${aws_s3_object.isaac_lab_source.bucket}/${aws_s3_object.isaac_lab_source.key}"
     buildspec = file("${path.module}/../../containers/isaac-lab/buildspec.yml")
   }
 
@@ -97,8 +152,8 @@ resource "aws_iam_role_policy" "codebuild" {
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::${var.project_name}-${var.environment}-datasets-${local.account_id}",
-          "arn:aws:s3:::${var.project_name}-${var.environment}-datasets-${local.account_id}/*"
+          "arn:aws:s3:::${data.aws_ssm_parameter.datasets_bucket.value}",
+          "arn:aws:s3:::${data.aws_ssm_parameter.datasets_bucket.value}/*"
         ]
       },
       {

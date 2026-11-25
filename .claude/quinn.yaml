@@ -100,6 +100,12 @@ ci:
     - path: mujoco-on-aws/infra/tests
       reason: terraform test (mocked AWS, offline) needs a real terraform and registry.terraform.io; the box has only a shim and the repo has no CI workflows
       bead: sampleawsphysicalaitoolchain-dvs
+    - path: isaac-gr00t-on-aws/infra/tests
+      reason: terraform test (mocked AWS, offline) needs a real terraform and registry.terraform.io; the box has only a shim and the repo has no CI workflows
+      bead: sampleawsphysicalaitoolchain-dvs
+    - path: isaac-lab-on-aws/infra/tests
+      reason: terraform test (mocked AWS, offline) needs a real terraform and registry.terraform.io; the box has only a shim and the repo has no CI workflows
+      bead: sampleawsphysicalaitoolchain-dvs
   #  - path: tests/manual
   #    reason: needs a GPU box; runs from the box timer
   #    bead: <prefix>-xxxxx
