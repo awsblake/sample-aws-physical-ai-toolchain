@@ -28,6 +28,32 @@ jobs:
       - name: ci.lanes.fast
         run: python3 -m compileall -q pai && cdk/node_modules/.bin/tsc -p cdk --noEmit && python3 training/scripts/test_launch_mujoco_batch.py && python3 scripts/test_secret_scan_hook.py
 
+  # The *.tftest.hcl regressions mock the AWS provider, so they run offline once init has pulled
+  # the providers from registry.terraform.io; the box has no real terraform, so only this job runs
+  # them (sampleawsphysicalaitoolchain-dvs). check_source_archive.py re-runs the MuJoCo test and
+  # checks the zip it built.
+  terraform-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # One provider download serves all three stacks. Outside the checkout, since the MuJoCo
+    # stack zips the repo as its CodeBuild source.
+    env:
+      TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/terraform-plugin-cache
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          # Pinned so a new terraform release cannot turn the job red on its own.
+          terraform_version: "1.17.2"
+          terraform_wrapper: false
+      - run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
+      - name: terraform test (mujoco-on-aws)
+        run: terraform -chdir=mujoco-on-aws/infra init -backend=false -input=false && terraform -chdir=mujoco-on-aws/infra test && python3 mujoco-on-aws/infra/tests/check_source_archive.py
+      - name: terraform test (isaac-gr00t-on-aws)
+        run: terraform -chdir=isaac-gr00t-on-aws/infra init -backend=false -input=false && terraform -chdir=isaac-gr00t-on-aws/infra test
+      - name: terraform test (isaac-lab-on-aws)
+        run: terraform -chdir=isaac-lab-on-aws/infra init -backend=false -input=false && terraform -chdir=isaac-lab-on-aws/infra test
+
   secrets:
     runs-on: ubuntu-latest
     timeout-minutes: 5
